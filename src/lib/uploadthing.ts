@@ -1,15 +1,4 @@
-import { UploadThing } from "uploadthing/server";
-import type { OurFileRouter } from "@/app/api/uploadthing/core";
-
-export const utApi = UploadThing({
+export const uploadthingConfig = {
   apiKey: process.env.UPLOADTHING_SECRET,
-});
-
-export const utRoutes = {
-  apiRouter: {},
-  middleware: () => {
-    return {};
-  },
+  appId: process.env.UPLOADTHING_APP_ID,
 };
-
-export type UploadThingRouter = typeof import("@/app/api/uploadthing/core").default;
