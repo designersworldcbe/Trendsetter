@@ -1,0 +1,510 @@
+// Trendsetter - Machining Cost Calculator SaaS
+// Database Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// USER & AUTHENTICATION
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  password      String?
+  name          String?
+  image         String?
+  phone         String?
+  phoneVerified Boolean   @default(false)
+  
+  // Auth methods
+  accounts      Account[]
+  sessions      Session[]
+  
+  // Relations
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  role           Role          @default(USER)
+  
+  // User data
+  calculations   Calculation[]
+  machines       Machine[]
+  organizations  Organization[] @relation("OrgOwner")
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("sessions")
+}
+
+model VerificationToken {
+  id          String   @id @default(cuid())
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ============================================
+// ORGANIZATION & MULTI-TENANCY
+// ============================================
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  logo        String?
+  website     String?
+  phone       String?
+  address     String?  @db.Text
+  
+  // Billing
+  plan        Plan     @default(FREE)
+  paypalId    String?
+  
+  // Relations
+  ownerId     String
+  owner       User     @relation("OrgOwner", fields: [ownerId], references: [id])
+  members     User[]
+  
+  // Data
+  machines    Machine[]
+  calculations Calculation[]
+  machineTemplates MachineTemplate[]
+  secondaryProcesses SecondaryProcess[]
+  markupSettings   MarkupSettings?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("organizations")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  ESTIMATOR
+  USER
+}
+
+enum Plan {
+  FREE
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+// ============================================
+// MACHINE MASTER DATABASE
+// ============================================
+
+model Machine {
+  id              String   @id @default(cuid())
+  name            String
+  type            MachineType
+  description     String?  @db.Text
+  
+  // Costs
+  hourlyRate      Decimal  @db.Decimal(10, 2)
+  setupCost       Decimal  @db.Decimal(10, 2)
+  toolingCostRate Decimal  @default(0) @db.Decimal(10, 2)
+  
+  // Capabilities
+  materialRemovalRate Decimal? @db.Decimal(10, 2)
+  powerConsumption   Decimal? @db.Decimal(10, 2)
+  accuracy           String?
+  
+  // Dimensions
+  workEnvelopeX     Decimal? @db.Decimal(10, 2)
+  workEnvelopeY     Decimal? @db.Decimal(10, 2)
+  workEnvelopeZ     Decimal? @db.Decimal(10, 2)
+  
+  // Performance
+  spindleSpeedMin   Int?
+  spindleSpeedMax   Int?
+  efficiencyFactor  Decimal  @default(0.85) @db.Decimal(5, 2)
+  
+  // Status
+  isActive          Boolean  @default(true)
+  
+  // Relations
+  organizationId    String
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  createdById       String
+  createdBy         User     @relation(fields: [createdById], references: [id])
+  
+  operations        Operation[]
+  machineImage      String?
+  specs             Json?    
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@map("machines")
+}
+
+enum MachineType {
+  CNC_TURNING
+  VMC
+  HMC
+  CNC_MILLING_3AXIS
+  CNC_MILLING_4AXIS
+  CNC_MILLING_5AXIS
+  EDM_WIRE
+  EDM_DIE_SINKING
+  PRINTING_SLA
+  PRINTING_FDM
+  PRINTING_SLS
+  GRINDING
+  DRILLING
+  OTHER
+}
+
+// Machine templates for quick creation
+model MachineTemplate {
+  id          String      @id @default(cuid())
+  name        String
+  type        MachineType
+  description String?     @db.Text
+  
+  // Default costs
+  defaultHourlyRate      Decimal @db.Decimal(10, 2)
+  defaultSetupCost       Decimal @db.Decimal(10, 2)
+  defaultToolingCostRate Decimal @default(0) @db.Decimal(10, 2)
+  
+  // Default capabilities
+  defaultMRR            Decimal? @db.Decimal(10, 2)
+  defaultEfficiency     Decimal  @default(0.85) @db.Decimal(5, 2)
+  
+  organizationId  String?
+  organization    Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("machine_templates")
+}
+
+// ============================================
+// CAD FILES & FEATURES
+// ============================================
+
+model Calculation {
+  id              String   @id @default(cuid())
+  
+  // File info
+  fileName        String
+  fileSize        Int
+  fileUrl         String   @db.Text
+  fileType        String   
+  
+  // Model info
+  modelImageUrl   String?  @db.Text
+  multiViewImages Json?    
+  volume          Decimal? @db.Decimal(15, 4)
+  surfaceArea     Decimal? @db.Decimal(15, 4)
+  boundingBox     Json?    
+  
+  // Stock
+  stockType       StockType @default(CALCULATED)
+  stockFileUrl    String?
+  stockMaterial   String?
+  stockDimensions Json?    
+  
+  // Features (stored as JSON)
+  recognizedFeatures String @db.Text
+  
+  // Operations
+  operations      Operation[]
+  
+  // Costs
+  materialCost     Decimal @default(0) @db.Decimal(12, 2)
+  machiningCost    Decimal @default(0) @db.Decimal(12, 2)
+  secondaryCost    Decimal @default(0) @db.Decimal(12, 2)
+  toolingCost      Decimal @default(0) @db.Decimal(12, 2)
+  subtotal         Decimal @default(0) @db.Decimal(12, 2)
+  overheadPercent  Decimal @default(15) @db.Decimal(5, 2)
+  overheadAmount   Decimal @default(0) @db.Decimal(12, 2)
+  profitPercent    Decimal @default(10) @db.Decimal(5, 2)
+  profitAmount     Decimal @default(0) @db.Decimal(12, 2)
+  totalCost        Decimal @default(0) @db.Decimal(12, 2)
+  
+  // Status
+  status          CalculationStatus @default(PENDING)
+  
+  // Relations
+  organizationId   String
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  createdById      String
+  createdBy       User @relation(fields: [createdById], references: [id])
+  
+  // Quote info
+  quoteNumber      String?
+  customerName     String?
+  customerEmail    String?
+  validUntil       DateTime?
+  
+  notes            String?  @db.Text
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  @@map("calculations")
+}
+
+enum StockType {
+  CALCULATED
+  FROM_GEOMETRY
+  MANUAL
+}
+
+enum CalculationStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model Operation {
+  id              String   @id @default(cuid())
+  
+  // Feature reference
+  featureId       String?
+  featureType     String
+  featureParams   Json?    
+  
+  // Machine assignment
+  machineId       String?
+  machine         Machine? @relation(fields: [machineId], references: [id])
+  
+  // Timing
+  setupTime       Int      @default(0)  
+  machiningTime   Int      @default(0)  
+  toolChangeTime  Int      @default(0) 
+  totalTime       Int      @default(0) 
+  
+  // Costs
+  setupCost       Decimal  @default(0) @db.Decimal(10, 2)
+  machiningCost   Decimal  @default(0) @db.Decimal(10, 2)
+  toolingCost     Decimal  @default(0) @db.Decimal(10, 2)
+  totalCost       Decimal  @default(0) @db.Decimal(10, 2)
+  
+  // Sequence
+  setupGroup      Int      @default(1)  
+  sequence        Int      @default(1)  
+  
+  // Relations
+  calculationId   String
+  calculation     Calculation @relation(fields: [calculationId], references: [id], onDelete: Cascade)
+  
+  notes           String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("operations")
+}
+
+// ============================================
+// SECONDARY PROCESSES
+// ============================================
+
+model SecondaryProcess {
+  id              String   @id @default(cuid())
+  name            String
+  type            SecondaryProcessType
+  description     String?
+  
+  // Pricing
+  unitPrice       Decimal  @db.Decimal(10, 2)
+  priceUnit       PriceUnit @default(PER_PIECE)
+  minQuantity     Int      @default(1)
+  perUnitWeight   Decimal? @db.Decimal(10, 2) 
+  
+  // Applicability
+  appliesTo       Json?    
+  surfaceAreaFactor Boolean @default(false)
+  weightFactor    Boolean  @default(false)
+  
+  // Relations
+  organizationId  String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  isActive        Boolean  @default(true)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("secondary_processes")
+}
+
+enum SecondaryProcessType {
+  PAINTING
+  POWDER_COATING
+  ELECTROPLATING
+  ANODIZING
+  GALVANIZING
+  HEAT_TREATMENT_HARDENING
+  HEAT_TREATMENT_TEMPERING
+  HEAT_TREATMENT_ANNEALING
+  HEAT_TREATMENT_CASE_HARDENING
+  INSPECTION
+  DEBURRING
+  POLISHING
+  PACKAGING
+  CUSTOM
+}
+
+enum PriceUnit {
+  PER_PIECE
+  PER_KG
+  PER_SQM
+  PER_HOUR
+  FIXED
+}
+
+// ============================================
+// MARKUP CONFIGURATION
+// ============================================
+
+model MarkupSettings {
+  id              String   @id @default(cuid())
+  
+  // Overhead
+  overheadPercent      Decimal @default(15) @db.Decimal(5, 2)
+  
+  // Profit
+  profitPercent       Decimal @default(10) @db.Decimal(5, 2)
+  
+  // Sales
+  salesPercent        Decimal @default(5) @db.Decimal(5, 2)
+  
+  // Quick quote adjustment
+  quickQuoteAdjustment Decimal @default(0) @db.Decimal(5, 2)
+  
+  // Relations
+  organizationId  String  @unique
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("markup_settings")
+}
+
+// ============================================
+// MATERIALS DATABASE
+// ============================================
+
+model Material {
+  id              String   @id @default(cuid())
+  name            String
+  category        MaterialCategory
+  grade           String?
+  
+  // Properties
+  density         Decimal  @db.Decimal(10, 4) 
+  costPerKg       Decimal  @db.Decimal(10, 2)
+  
+  // Machinability
+  hardness        String?
+  machinabilityRating Decimal? @db.Decimal(5, 2) 
+  toolWearFactor  Decimal  @default(1.0) @db.Decimal(5, 2)
+  
+  isActive        Boolean  @default(true)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("materials")
+}
+
+enum MaterialCategory {
+  STEEL
+  ALUMINUM
+  STAINLESS_STEEL
+  CAST_IRON
+  BRASS
+  COPPER
+  BRONZE
+  PLASTIC
+  TITANIUM
+  OTHER
+}
+
+// ============================================
+// SUBSCRIPTIONS & PAYMENTS
+// ============================================
+
+model Subscription {
+  id              String   @id @default(cuid())
+  
+  organizationId  String
+  plan            Plan
+  status          SubscriptionStatus @default(ACTIVE)
+  
+  // PayPal
+  paypalSubscriptionId String?
+  paypalCustomerId     String?
+  
+  // Limits
+  maxCalculations  Int      @default(10)
+  maxMachines     Int      @default(5)
+  maxUsers        Int      @default(2)
+  
+  // Period
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("subscriptions")
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  SUSPENDED
+}

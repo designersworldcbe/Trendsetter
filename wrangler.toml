@@ -1,0 +1,32 @@
+# Cloudflare Wrangler Configuration
+# ===========================================
+# For Trendsetter - track.costinghub.com
+
+name = "trendsetter"
+compatibility_date = "2024-01-01"
+
+# Pages configuration
+pages_build_output_dir = ".next"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "trendsetter-db"
+database_id = "YOUR-D1-DATABASE-ID-HERE"
+
+# KV Namespace for sessions/cache (optional)
+# [[kv_namespaces]]
+# binding = "CACHE"
+# id = "YOUR-KV-ID-HERE"
+
+# Environment variables exposed to the application
+[vars]
+NEXT_PUBLIC_APP_NAME = "Trendsetter"
+NEXT_PUBLIC_APP_URL = "https://track.costinghub.com"
+
+# Secrets (set via `wrangler secret put`):
+# - NEXTAUTH_SECRET
+# - DATABASE_AUTH_TOKEN
+# - PAYPAL_CLIENT_ID
+# - PAYPAL_CLIENT_SECRET
+# - SMTP_PASSWORD
