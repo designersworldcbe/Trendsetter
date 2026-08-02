@@ -81,7 +81,7 @@ export default function DashboardPage() {
           <p className="text-muted-foreground">Welcome back! Here&apos;s your overview.</p>
         </div>
         <Link 
-          href="/dashboard/upload"
+          href="/upload"
           className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors"
         >
           <Upload className="w-4 h-4" />
@@ -119,7 +119,7 @@ export default function DashboardPage() {
       {/* Quick Actions */}
       <div className="grid gap-4 md:grid-cols-3">
         <Link 
-          href="/dashboard/upload"
+          href="/upload"
           className="bg-background rounded-xl p-6 border border-border card-hover group"
         >
           <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
@@ -132,7 +132,7 @@ export default function DashboardPage() {
         </Link>
 
         <Link 
-          href="/dashboard/machines"
+          href="/machines"
           className="bg-background rounded-xl p-6 border border-border card-hover group"
         >
           <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
@@ -145,7 +145,7 @@ export default function DashboardPage() {
         </Link>
 
         <Link 
-          href="/dashboard/reports"
+          href="/reports"
           className="bg-background rounded-xl p-6 border border-border card-hover group"
         >
           <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
@@ -163,7 +163,7 @@ export default function DashboardPage() {
         <div className="px-6 py-4 border-b border-border flex items-center justify-between">
           <h2 className="font-semibold">Recent Calculations</h2>
           <Link 
-            href="/dashboard/calculations"
+            href="/calculations?/calculations"
             className="text-sm text-primary hover:underline flex items-center gap-1"
           >
             View all
@@ -174,7 +174,7 @@ export default function DashboardPage() {
           {recentCalculations.map((calc) => (
             <Link
               key={calc.id}
-              href={`/dashboard/calculations/${calc.id}`}
+              href={`/calculations/${calc.id}`}
               className="flex items-center justify-between px-6 py-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-4">
@@ -213,7 +213,7 @@ export default function DashboardPage() {
             </p>
           </div>
           <Link 
-            href="/dashboard/upload"
+            href="/upload"
             className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors whitespace-nowrap"
           >
             Upload Your First File

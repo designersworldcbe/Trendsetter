@@ -100,7 +100,7 @@ export default function CalculationsPage() {
           </p>
         </div>
         <Link 
-          href="/dashboard/upload"
+          href="/upload"
           className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors"
         >
           <Calculator className="w-4 h-4" />
@@ -168,7 +168,7 @@ export default function CalculationsPage() {
                 <tr key={calc.id} className="table-row">
                   <td className="px-6 py-4">
                     <Link 
-                      href={`/dashboard/calculations/${calc.id}`}
+                      href={`/calculations/${calc.id}`}
                       className="font-medium hover:text-primary"
                     >
                       {calc.name}
@@ -211,7 +211,7 @@ export default function CalculationsPage() {
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <Link
-                        href={`/dashboard/calculations/${calc.id}`}
+                        href={`/calculations/${calc.id}`}
                         className="p-2 hover:bg-muted rounded-md transition-colors"
                         title="View"
                       >
@@ -254,7 +254,7 @@ export default function CalculationsPage() {
               }
             </p>
             <Link 
-              href="/dashboard/upload"
+              href="/upload"
               className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors"
             >
               <Calculator className="w-4 h-4" />

@@ -24,8 +24,8 @@ export async function POST(request: NextRequest) {
     const result = await createSubscription(
       planDetails.id,
       email,
-      returnUrl || `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?subscription=success`,
-      cancelUrl || `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings?subscription=cancelled`
+      returnUrl || `${process.env.NEXT_PUBLIC_APP_URL}/calculations??subscription=success`,
+      cancelUrl || `${process.env.NEXT_PUBLIC_APP_URL}/calculations?/settings?subscription=cancelled`
     );
 
     return NextResponse.json({

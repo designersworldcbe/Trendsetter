@@ -110,7 +110,7 @@ export default function SubscriptionPage() {
         body: JSON.stringify({
           plan: planId,
           email,
-          returnUrl: `${window.location.origin}/dashboard?subscription=success`,
+          returnUrl: `${window.location.origin}/calculations??subscription=success`,
           cancelUrl: `${window.location.origin}/subscription?cancelled=true`,
         }),
       });
