@@ -18,12 +18,12 @@ import {
 import { useState } from "react";
 
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Upload", href: "/dashboard/upload", icon: Upload },
-  { name: "Calculations", href: "/dashboard/calculations", icon: Calculator },
-  { name: "Machines", href: "/dashboard/machines", icon: Cog },
-  { name: "Reports", href: "/dashboard/reports", icon: FileText },
-  { name: "Settings", href: "/dashboard/settings", icon: Settings },
+  { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Upload", href: "/upload", icon: Upload },
+  { name: "Calculations", href: "/calculations", icon: Calculator },
+  { name: "Machines", href: "/machines", icon: Cog },
+  { name: "Reports", href: "/reports", icon: FileText },
+  { name: "Settings", href: "/settings", icon: Settings },
 ];
 
 export default function DashboardLayout({

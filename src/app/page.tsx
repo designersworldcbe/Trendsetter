@@ -30,14 +30,11 @@ export default function Home() {
             <Link href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Pricing
             </Link>
-            <Link href="/auth/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Sign In
-            </Link>
             <Link 
-              href="/auth/register" 
+              href="/dashboard" 
               className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
             >
-              Get Started
+              Open App
             </Link>
           </div>
         </div>
@@ -59,22 +56,13 @@ export default function Home() {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link 
-              href="/auth/register" 
+              href="/dashboard" 
               className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors"
             >
-              Start Free Trial
+              Open App
               <ArrowRight className="w-4 h-4" />
             </Link>
-            <Link 
-              href="/demo" 
-              className="flex items-center gap-2 px-6 py-3 border border-border rounded-md font-medium hover:bg-muted transition-colors"
-            >
-              Watch Demo
-            </Link>
           </div>
-          <p className="mt-4 text-sm text-muted-foreground">
-            No credit card required • 14-day free trial • Cancel anytime
-          </p>
         </div>
       </section>
 
@@ -269,10 +257,10 @@ export default function Home() {
                 </li>
               </ul>
               <Link 
-                href="/auth/register" 
+                href="/dashboard" 
                 className="block w-full py-3 text-center border border-border rounded-md font-medium hover:bg-muted transition-colors"
               >
-                Get Started
+                Open App
               </Link>
             </div>
 
@@ -305,10 +293,10 @@ export default function Home() {
                 </li>
               </ul>
               <Link 
-                href="/auth/register?plan=professional" 
+                href="/dashboard" 
                 className="block w-full py-3 text-center bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors"
               >
-                Start Free Trial
+                Open App
               </Link>
             </div>
 
@@ -359,10 +347,10 @@ export default function Home() {
             to save time and improve accuracy.
           </p>
           <Link 
-            href="/auth/register" 
+            href="/dashboard" 
             className="inline-flex items-center gap-2 px-8 py-4 bg-primary text-primary-foreground rounded-md font-medium text-lg hover:bg-primary/90 transition-colors"
           >
-            Start Your Free Trial
+            Open App
             <ArrowRight className="w-5 h-5" />
           </Link>
         </div>
