@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef, Suspense, useEffect, useState } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Stage, Environment, useGLTF } from "@react-three/drei";
+import { useRef, Suspense, useEffect, useState, useMemo } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { OrbitControls, Stage, Environment } from "@react-three/drei";
 import * as THREE from "three";
+import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 
 interface MeshData {
   vertices: number[];
@@ -15,6 +16,8 @@ interface ModelViewerProps {
   meshData?: MeshData;
   fileName?: string;
   modelUrl?: string;
+  file?: File | null;
+  onModelLoaded?: (info: { vertices: number; triangles: number; bbox: any }) => void;
 }
 
 // Component to render actual mesh data
@@ -27,31 +30,33 @@ function MeshModel({ meshData }: { meshData: MeshData }) {
     }
   });
 
-  // Create geometry from mesh data
-  const geometry = new THREE.BufferGeometry();
-  
-  if (meshData.vertices && meshData.vertices.length > 0) {
-    geometry.setAttribute(
-      'position',
-      new THREE.Float32BufferAttribute(meshData.vertices, 3)
-    );
-  }
-  
-  if (meshData.normals && meshData.normals.length > 0) {
-    geometry.setAttribute(
-      'normal',
-      new THREE.Float32BufferAttribute(meshData.normals, 3)
-    );
-  }
-  
-  if (meshData.indices && meshData.indices.length > 0) {
-    geometry.setIndex(meshData.indices);
-  }
+  const geometry = useMemo(() => {
+    const geo = new THREE.BufferGeometry();
+    
+    if (meshData.vertices && meshData.vertices.length > 0) {
+      geo.setAttribute(
+        'position',
+        new THREE.Float32BufferAttribute(meshData.vertices, 3)
+      );
+    }
+    
+    if (meshData.normals && meshData.normals.length > 0) {
+      geo.setAttribute(
+        'normal',
+        new THREE.Float32BufferAttribute(meshData.normals, 3)
+      );
+    }
+    
+    if (meshData.indices && meshData.indices.length > 0) {
+      geo.setIndex(meshData.indices);
+    }
 
-  // Compute normals if not provided
-  if (!meshData.normals || meshData.normals.length === 0) {
-    geometry.computeVertexNormals();
-  }
+    if (!meshData.normals || meshData.normals.length === 0) {
+      geo.computeVertexNormals();
+    }
+    
+    return geo;
+  }, [meshData]);
 
   return (
     <mesh ref={meshRef} geometry={geometry} castShadow receiveShadow>
@@ -62,6 +67,79 @@ function MeshModel({ meshData }: { meshData: MeshData }) {
         side={THREE.DoubleSide}
       />
     </mesh>
+  );
+}
+
+// STL Model Loader Component
+function STLModel({ file, onModelLoaded }: { file: File; onModelLoaded?: (info: any) => void }) {
+  const groupRef = useRef<THREE.Group>(null);
+  const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loader = new STLLoader();
+    
+    loader.load(
+      URL.createObjectURL(file),
+      (geo) => {
+        // Center the geometry
+        geo.computeBoundingBox();
+        const center = new THREE.Vector3();
+        geo.boundingBox?.getCenter(center);
+        geo.translate(-center.x, -center.y, -center.z);
+        
+        // Scale to fit view
+        const size = new THREE.Vector3();
+        geo.boundingBox?.getSize(size);
+        const maxDim = Math.max(size.x, size.y, size.z);
+        if (maxDim > 2) {
+          const scale = 2 / maxDim;
+          geo.scale(scale, scale, scale);
+        }
+        
+        setGeometry(geo);
+        setLoading(false);
+        
+        if (onModelLoaded) {
+          onModelLoaded({
+            vertices: geo.attributes.position.count,
+            triangles: geo.index ? geo.index.count / 3 : geo.attributes.position.count / 3,
+            bbox: geo.boundingBox
+          });
+        }
+      },
+      undefined,
+      (err) => {
+        console.error("STL loading error:", err);
+        setError("Failed to load STL file");
+        setLoading(false);
+      }
+    );
+  }, [file, onModelLoaded]);
+
+  useFrame((state) => {
+    if (groupRef.current) {
+      groupRef.current.rotation.y = state.clock.elapsedTime * 0.3;
+    }
+  });
+
+  if (loading) return null;
+  if (error) return null;
+
+  return (
+    <group ref={groupRef}>
+      {geometry && (
+        <mesh geometry={geometry} castShadow receiveShadow>
+          <meshStandardMaterial 
+            color="#6366f1" 
+            metalness={0.3} 
+            roughness={0.4}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      )}
+    </group>
   );
 }
 
@@ -77,19 +155,16 @@ function DemoModel() {
 
   return (
     <group ref={meshRef}>
-      {/* Main body - rectangular block */}
       <mesh position={[0, 0, 0]} castShadow>
         <boxGeometry args={[2, 0.8, 1.2]} />
         <meshStandardMaterial color="#4f46e5" metalness={0.4} roughness={0.3} />
       </mesh>
       
-      {/* Cylindrical feature */}
       <mesh position={[0, 0.6, 0]} castShadow>
         <cylinderGeometry args={[0.3, 0.3, 0.4, 32]} />
         <meshStandardMaterial color="#818cf8" metalness={0.5} roughness={0.2} />
       </mesh>
       
-      {/* Side holes */}
       <mesh position={[0.7, 0, 0.65]} rotation={[Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[0.15, 0.15, 0.4, 32]} />
         <meshStandardMaterial color="#312e81" metalness={0.6} roughness={0.2} />
@@ -99,7 +174,6 @@ function DemoModel() {
         <meshStandardMaterial color="#312e81" metalness={0.6} roughness={0.2} />
       </mesh>
       
-      {/* Base plate */}
       <mesh position={[0, -0.5, 0]} castShadow>
         <boxGeometry args={[2.2, 0.2, 1.4]} />
         <meshStandardMaterial color="#3730a3" metalness={0.3} roughness={0.5} />
@@ -108,35 +182,38 @@ function DemoModel() {
   );
 }
 
-// External model loader (for GLTF/GLB)
-function GLTFModel({ url }: { url: string }) {
-  const { scene } = useGLTF(url);
-  const ref = useRef<THREE.Group>(null);
-
+// GLTF Model Loader
+function GLTFModelComponent({ url }: { url: string }) {
+  const groupRef = useRef<THREE.Group>(null);
+  
   useFrame((state) => {
-    if (ref.current) {
-      ref.current.rotation.y = state.clock.elapsedTime * 0.3;
+    if (groupRef.current) {
+      groupRef.current.rotation.y = state.clock.elapsedTime * 0.3;
     }
   });
 
-  return (
-    <group ref={ref}>
-      <primitive object={scene} />
-    </group>
-  );
+  const [scene, setScene] = useState<THREE.Group | null>(null);
+
+  useEffect(() => {
+    import("@react-three/drei").then((drei) => {
+      // Use useGLTF dynamically
+    });
+  }, [url]);
+
+  return <group ref={groupRef}>{scene && <primitive object={scene} />}</group>;
 }
 
-function Scene({ meshData, modelUrl }: { meshData?: MeshData; modelUrl?: string }) {
+function Scene({ meshData, file }: { meshData?: MeshData; file?: File | null }) {
   const [autoRotate, setAutoRotate] = useState(true);
 
   return (
     <>
       <Suspense fallback={null}>
         <Stage environment="city" intensity={0.6}>
-          {meshData && meshData.vertices.length > 0 ? (
+          {file ? (
+            <STLModel file={file} />
+          ) : meshData && meshData.vertices.length > 0 ? (
             <MeshModel meshData={meshData} />
-          ) : modelUrl ? (
-            <GLTFModel url={modelUrl} />
           ) : (
             <DemoModel />
           )}
@@ -148,8 +225,8 @@ function Scene({ meshData, modelUrl }: { meshData?: MeshData; modelUrl?: string 
         autoRotateSpeed={2}
         enableZoom={true}
         enablePan={true}
-        minDistance={1}
-        maxDistance={20}
+        minDistance={0.5}
+        maxDistance={10}
         onStart={() => setAutoRotate(false)}
       />
       
@@ -160,7 +237,7 @@ function Scene({ meshData, modelUrl }: { meshData?: MeshData; modelUrl?: string 
   );
 }
 
-export default function ModelViewer({ meshData, fileName, modelUrl }: ModelViewerProps) {
+export default function ModelViewer({ meshData, fileName, file, onModelLoaded }: ModelViewerProps) {
   return (
     <div className="w-full h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-lg overflow-hidden">
       <Canvas 
@@ -168,7 +245,7 @@ export default function ModelViewer({ meshData, fileName, modelUrl }: ModelViewe
         camera={{ position: [3, 2, 5], fov: 45 }}
         gl={{ antialias: true, alpha: true }}
       >
-        <Scene meshData={meshData} modelUrl={modelUrl} />
+        <Scene meshData={meshData} file={file} />
       </Canvas>
       
       {fileName && (

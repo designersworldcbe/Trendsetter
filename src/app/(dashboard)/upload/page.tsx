@@ -301,7 +301,17 @@ export default function UploadPage() {
               <div className="model-viewer-container aspect-video">
                 <ModelViewer 
                   meshData={meshData} 
-                  fileName={file.name} 
+                  fileName={file.name}
+                  file={file}
+                  onModelLoaded={(info) => {
+                    setModelInfo((prev: any) => ({
+                      ...prev,
+                      vertices: info.vertices,
+                      triangles: Math.round(info.triangles),
+                      dimensions: info.bbox ? 
+                        `${(info.bbox.max.x - info.bbox.min.x) * 1000} × ${(info.bbox.max.y - info.bbox.min.y) * 1000} × ${(info.bbox.max.z - info.bbox.min.z) * 1000} mm` : prev?.dimensions
+                    }));
+                  }}
                 />
               </div>
             </div>

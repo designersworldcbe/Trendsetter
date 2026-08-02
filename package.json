@@ -38,6 +38,7 @@
     "sharp": "^0.35.3",
     "tailwind-merge": "^3.6.0",
     "three": "^0.185.1",
+    "three-stl-loader": "^1.0.6",
     "uploadthing": "^7.7.4",
     "uuid": "^14.0.1",
     "wrangler": "^4.114.0",
