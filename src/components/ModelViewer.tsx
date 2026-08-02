@@ -17,7 +17,14 @@ interface ModelViewerProps {
   fileName?: string;
   modelUrl?: string;
   file?: File | null;
-  onModelLoaded?: (info: { vertices: number; triangles: number; bbox: any }) => void;
+  onModelLoaded?: (info: { 
+    vertices: number; 
+    triangles: number; 
+    bbox: any; 
+    rawVertices?: number[];
+    rawIndices?: number[];
+    dimensions?: { width: number; height: number; depth: number };
+  }) => void;
 }
 
 // Component to render actual mesh data
@@ -93,9 +100,28 @@ function STLModel({ file, onModelLoaded }: { file: File; onModelLoaded?: (info: 
         const size = new THREE.Vector3();
         geo.boundingBox?.getSize(size);
         const maxDim = Math.max(size.x, size.y, size.z);
-        if (maxDim > 2) {
-          const scale = 2 / maxDim;
-          geo.scale(scale, scale, scale);
+        const scaleFactor = maxDim > 2 ? 2 / maxDim : 1;
+        geo.scale(scaleFactor, scaleFactor, scaleFactor);
+        
+        // Extract mesh data for feature detection
+        const positions = geo.attributes.position.array;
+        const indices = geo.index ? geo.index.array : null;
+        
+        // Convert to flat arrays for feature detection
+        const vertices: number[] = [];
+        for (let i = 0; i < positions.length; i++) {
+          vertices.push(positions[i]);
+        }
+        
+        // Create index array if not present
+        let indexArray: number[] = [];
+        if (indices) {
+          indexArray = Array.from(indices);
+        } else {
+          // Create indices for non-indexed geometry
+          for (let i = 0; i < vertices.length / 3; i++) {
+            indexArray.push(i);
+          }
         }
         
         setGeometry(geo);
@@ -104,8 +130,15 @@ function STLModel({ file, onModelLoaded }: { file: File; onModelLoaded?: (info: 
         if (onModelLoaded) {
           onModelLoaded({
             vertices: geo.attributes.position.count,
-            triangles: geo.index ? geo.index.count / 3 : geo.attributes.position.count / 3,
-            bbox: geo.boundingBox
+            triangles: indexArray.length / 3,
+            bbox: geo.boundingBox,
+            rawVertices: vertices,
+            rawIndices: indexArray,
+            dimensions: {
+              width: size.x * 1000,
+              height: size.y * 1000,
+              depth: size.z * 1000
+            }
           });
         }
       },
