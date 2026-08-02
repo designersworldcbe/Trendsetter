@@ -21,6 +21,16 @@ import {
   Eye
 } from "lucide-react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+
+const ModelViewer = dynamic(() => import("@/components/ModelViewer"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800 rounded-lg">
+      <Loader2 className="w-8 h-8 text-white/50 animate-spin" />
+    </div>
+  ),
+});
 
 // Simulated feature recognition results
 const mockFeatures = [
@@ -255,16 +265,8 @@ export default function UploadPage() {
                   </button>
                 </div>
               </div>
-              <div className="model-viewer-container aspect-video flex items-center justify-center">
-                <div className="text-center">
-                  <Box className="w-20 h-20 text-white/30 mx-auto mb-2" />
-                  <p className="text-white/50 text-sm">{file.name}</p>
-                  <p className="text-white/30 text-xs mt-1">
-                    {modelView === "3d" ? "3D View" : 
-                     modelView === "top" ? "Top View" :
-                     modelView === "front" ? "Front View" : "Isometric View"}
-                  </p>
-                </div>
+              <div className="model-viewer-container aspect-video">
+                <ModelViewer fileName={file.name} />
               </div>
             </div>
 
