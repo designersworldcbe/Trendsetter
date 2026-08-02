@@ -60,6 +60,8 @@ export default function UploadPage() {
   const [isComplete, setIsComplete] = useState(false);
   const [modelView, setModelView] = useState<"3d" | "top" | "front" | "right" | "iso">("3d");
   const [expandedSection, setExpandedSection] = useState<string | null>("features");
+  const [meshData, setMeshData] = useState<any>(null);
+  const [modelInfo, setModelInfo] = useState<any>(null);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -108,6 +110,8 @@ export default function UploadPage() {
 
   const processFile = async (file: File) => {
     setIsProcessing(true);
+    setMeshData(null);
+    setModelInfo(null);
     
     const steps = [
       "Uploading file...",
@@ -122,7 +126,34 @@ export default function UploadPage() {
 
     for (const step of steps) {
       setProcessingStep(step);
-      await new Promise(resolve => setTimeout(resolve, 400));
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+
+    try {
+      // Send file to processing API
+      const formData = new FormData();
+      formData.append("file", file);
+      
+      const response = await fetch("/api/process-model", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setMeshData(result.meshData);
+          setModelInfo({
+            dimensions: `${(result.bbox.width * 1000).toFixed(0)} × ${(result.bbox.height * 1000).toFixed(0)} × ${(result.bbox.depth * 1000).toFixed(0)} mm`,
+            volume: `${(result.bbox.width * result.bbox.height * result.bbox.depth * 1e9).toFixed(0)} mm³`,
+            vertices: result.stats.vertexCount,
+            triangles: result.stats.triangleCount,
+            fileType: result.fileType,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error processing model:", error);
     }
 
     setIsProcessing(false);
@@ -134,6 +165,8 @@ export default function UploadPage() {
     setIsProcessing(false);
     setIsComplete(false);
     setProcessingStep("");
+    setMeshData(null);
+    setModelInfo(null);
   };
 
   return (
@@ -266,7 +299,10 @@ export default function UploadPage() {
                 </div>
               </div>
               <div className="model-viewer-container aspect-video">
-                <ModelViewer fileName={file.name} />
+                <ModelViewer 
+                  meshData={meshData} 
+                  fileName={file.name} 
+                />
               </div>
             </div>
 
@@ -276,15 +312,23 @@ export default function UploadPage() {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Dimensions</p>
-                  <p className="font-medium">150 × 100 × 50 mm</p>
+                  <p className="font-medium">{modelInfo?.dimensions || "—"}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Volume</p>
-                  <p className="font-medium">750,000 mm³</p>
+                  <p className="font-medium">{modelInfo?.volume || "—"}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Surface Area</p>
-                  <p className="font-medium">55,000 mm²</p>
+                  <p className="text-muted-foreground">Vertices</p>
+                  <p className="font-medium">{modelInfo?.vertices?.toLocaleString() || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Triangles</p>
+                  <p className="font-medium">{modelInfo?.triangles?.toLocaleString() || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">File Type</p>
+                  <p className="font-medium">{modelInfo?.fileType || file?.name.split('.').pop()?.toUpperCase()}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Features</p>
