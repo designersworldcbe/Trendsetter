@@ -141,14 +141,43 @@ export default function UploadPage() {
 
       if (response.ok) {
         const result = await response.json();
+        
         if (result.success) {
-          setMeshData(result.meshData);
+          // For STL files or client-side loading
+          if (result.loadType === "client") {
+            // STL will be loaded directly by ModelViewer
+            setMeshData(null);
+            setModelInfo({
+              dimensions: "Loading from file...",
+              volume: "—",
+              vertices: "—",
+              triangles: "—",
+              fileType: result.fileType,
+            });
+          } 
+          // For server-processed files (STEP/IGES via Python service)
+          else if (result.loadType === "server" && result.meshData) {
+            setMeshData(result.meshData);
+            const bbox = result.bbox;
+            setModelInfo({
+              dimensions: `${(bbox.size[0] * 1000).toFixed(0)} × ${(bbox.size[1] * 1000).toFixed(0)} × ${(bbox.size[2] * 1000).toFixed(0)} mm`,
+              volume: `${(bbox.size[0] * bbox.size[1] * bbox.size[2] * 1e9).toFixed(0)} mm³`,
+              vertices: result.stats.vertexCount,
+              triangles: result.stats.triangleCount,
+              fileType: result.fileType,
+            });
+          }
+        } else if (result.error) {
+          console.error("Processing error:", result.message);
+          // Show demo model for unsupported files
+          setMeshData(null);
           setModelInfo({
-            dimensions: `${(result.bbox.width * 1000).toFixed(0)} × ${(result.bbox.height * 1000).toFixed(0)} × ${(result.bbox.depth * 1000).toFixed(0)} mm`,
-            volume: `${(result.bbox.width * result.bbox.height * result.bbox.depth * 1e9).toFixed(0)} mm³`,
-            vertices: result.stats.vertexCount,
-            triangles: result.stats.triangleCount,
-            fileType: result.fileType,
+            dimensions: "—",
+            volume: "—",
+            vertices: "—",
+            triangles: "—",
+            fileType: file.name.split('.').pop()?.toUpperCase() || "Unknown",
+            error: result.message,
           });
         }
       }
