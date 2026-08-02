@@ -31,7 +31,7 @@ export default function Home() {
               Pricing
             </Link>
             <Link 
-              href="/dashboard" 
+              href="/calculations" 
               className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
             >
               Open App
@@ -56,7 +56,7 @@ export default function Home() {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link 
-              href="/dashboard" 
+              href="/calculations" 
               className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors"
             >
               Open App
@@ -257,7 +257,7 @@ export default function Home() {
                 </li>
               </ul>
               <Link 
-                href="/dashboard" 
+                href="/calculations" 
                 className="block w-full py-3 text-center border border-border rounded-md font-medium hover:bg-muted transition-colors"
               >
                 Open App
@@ -293,7 +293,7 @@ export default function Home() {
                 </li>
               </ul>
               <Link 
-                href="/dashboard" 
+                href="/calculations" 
                 className="block w-full py-3 text-center bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors"
               >
                 Open App
@@ -347,7 +347,7 @@ export default function Home() {
             to save time and improve accuracy.
           </p>
           <Link 
-            href="/dashboard" 
+            href="/calculations" 
             className="inline-flex items-center gap-2 px-8 py-4 bg-primary text-primary-foreground rounded-md font-medium text-lg hover:bg-primary/90 transition-colors"
           >
             Open App
